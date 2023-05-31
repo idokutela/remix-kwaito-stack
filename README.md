@@ -26,6 +26,10 @@ npx create-remix@latest --template idokutela/remix-kwaito-stack
 
 Not a fan of bits of the stack? Fork it, change it, and use `npx create-remix --template your/repo`! Make it your own.
 
+## WARNING
+
+Much of what is below does not reflect the current state. I'll update this when I have got things to an acceptable point.
+
 ## Quickstart
 
 Click this button to create a [Gitpod](https://gitpod.io) workspace with the project set up, Postgres started, and Fly pre-installed (er, not sure this will work :D)
