@@ -15,12 +15,6 @@ const cleanupCypressFiles = ({ fileEntries, isTypeScript, packageManager }) =>
       isTypeScript ? `${packageManager.exec} ts-node` : "node"
     );
 
-    if (!isTypeScript) {
-      newContent = newContent
-        .replace(new RegExp("create-user.ts", "g"), "create-user.js")
-        .replace(new RegExp("delete-user.ts", "g"), "delete-user.js");
-    }
-
     return [fs.writeFile(filePath, newContent)];
   });
 
