@@ -5,7 +5,7 @@ A remix of [the Remix Blues Stack](https://github.com/remix-run/blues-stack) rem
 Learn more about [Remix Stacks](https://remix.run/stacks).
 
 ```
-npx create-remix@latest --template remix-run/blues-stack
+npx create-remix@latest --template idokutela/remix-kwaito-stack
 ```
 
 ## What's in the stack
@@ -30,7 +30,7 @@ Not a fan of bits of the stack? Fork it, change it, and use `npx create-remix --
 
 Click this button to create a [Gitpod](https://gitpod.io) workspace with the project set up, Postgres started, and Fly pre-installed (er, not sure this will work :D)
 
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/remix-run/blues-stack/tree/main)
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/idokutela/remix-kwaito-stack/tree/main)
 
 ## Development
 
@@ -105,7 +105,7 @@ Prior to your first deployment, you'll need to do a few things:
   fly apps create kwaito-stack-template-staging
   ```
 
-  > **Note:** Once you've successfully created an app, double-check the `fly.toml` file to ensure that the `app` key is the name of the production app you created. This Stack [automatically appends a unique suffix at init](https://github.com/remix-run/blues-stack/blob/4c2f1af416b539187beb8126dd16f6bc38f47639/remix.init/index.js#L29) which may not match the apps you created on Fly. You will likely see [404 errors in your Github Actions CI logs](https://community.fly.io/t/404-failure-with-deployment-with-remix-blues-stack/4526/3) if you have this mismatch.
+  > **Note:** Once you've successfully created an app, double-check the `fly.toml` file to ensure that the `app` key is the name of the production app you created. This Stack automatically appends a unique suffix at init. You will likely see [404 errors in your Github Actions CI logs](https://community.fly.io/t/404-failure-with-deployment-with-remix-blues-stack/4526/3) if you have this mismatch.
 
 - Initialize Git.
 
