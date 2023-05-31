@@ -138,14 +138,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     CYPRESS_SUPPORT_PATH,
     `commands.${FILE_EXTENSION}`
   );
-  const CREATE_USER_COMMAND_PATH = path.join(
-    CYPRESS_SUPPORT_PATH,
-    `create-user.${FILE_EXTENSION}`
-  );
-  const DELETE_USER_COMMAND_PATH = path.join(
-    CYPRESS_SUPPORT_PATH,
-    `delete-user.${FILE_EXTENSION}`
-  );
   const VITEST_CONFIG_PATH = path.join(
     rootDirectory,
     `vitest.config.${FILE_EXTENSION}`
@@ -166,8 +158,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     env,
     dockerfile,
     cypressCommands,
-    createUserCommand,
-    deleteUserCommand,
     deployWorkflow,
     vitestConfig,
     packageJson,
@@ -177,8 +167,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     fs.readFile(EXAMPLE_ENV_PATH, "utf-8"),
     fs.readFile(DOCKERFILE_PATH, "utf-8"),
     fs.readFile(CYPRESS_COMMANDS_PATH, "utf-8"),
-    fs.readFile(CREATE_USER_COMMAND_PATH, "utf-8"),
-    fs.readFile(DELETE_USER_COMMAND_PATH, "utf-8"),
     readFileIfNotTypeScript(isTypeScript, DEPLOY_WORKFLOW_PATH, (s) =>
       YAML.parse(s)
     ),
@@ -226,8 +214,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     ...cleanupCypressFiles({
       fileEntries: [
         [CYPRESS_COMMANDS_PATH, cypressCommands],
-        [CREATE_USER_COMMAND_PATH, createUserCommand],
-        [DELETE_USER_COMMAND_PATH, deleteUserCommand],
       ],
       isTypeScript,
       packageManager: pm,
