@@ -1,9 +1,7 @@
 # Remix Kwaito Stack
+A simple [Remix stack](https://remix.run/docs/en/main/pages/stacks) for apps on [fly.io]. The stack has no opinions on how you test or monitor.
 
-A remix of [the Remix Blues Stack](https://github.com/remix-run/blues-stack) removing prisma in favour of plain sql.
-
-Learn more about [Remix Stacks](https://remix.run/stacks).
-
+To create a new app, just run
 ```
 npx create-remix@latest --template idokutela/remix-kwaito-stack
 ```
@@ -14,17 +12,18 @@ npx create-remix@latest --template idokutela/remix-kwaito-stack
 - [Multi-region Fly PostgreSQL Cluster](https://fly.io/docs/getting-started/multi-region-databases/)
 - Healthcheck endpoint for [Fly backups region fallbacks](https://fly.io/docs/reference/configuration/#services-http_checks)
 - [GitHub Actions](https://github.com/features/actions) for deploy on merge to production and staging environments
-- Email/Password Authentication with [cookie-based sessions](https://remix.run/utils/sessions#creatememorysessionstorage)
 - basic PostgreSQL with [pg](https://node-postgres.com/) and a simple migration script.
 - Styling with [Tailwind](https://tailwindcss.com/)
-- End-to-end testing with [Cypress](https://cypress.io)
-- Local third party request mocking with [MSW](https://mswjs.io)
-- Unit testing with [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com)
 - Code formatting with [Prettier](https://prettier.io)
 - Linting with [ESLint](https://eslint.org)
 - Static Types with [TypeScript](https://typescriptlang.org)
 
-Not a fan of bits of the stack? Fork it, change it, and use `npx create-remix --template your/repo`! Make it your own.
+The following is *not* in the stack:
+- End-to-end testing
+- Local third party request mocking
+- Unit testing
+
+Setting that up is pretty specific to your own style: set up the stack, and then set up your testing environment.
 
 ## WARNING
 
@@ -38,7 +37,7 @@ Click this button to create a [Gitpod](https://gitpod.io) workspace with the pro
 
 ## Development
 
-- First run this stack's `remix.init` script and commit the changes it makes to your project.
+- If you did not ask to run npm install, you need to explicitly init the stack. Do so by running 
 
   ```sh
   npx remix init
