@@ -1,6 +1,5 @@
 import path from "path";
 
-import prom from "@isaacs/express-prometheus-middleware";
 import { createRequestHandler } from "@remix-run/express";
 import compression from "compression";
 import express from "express";
@@ -8,13 +7,6 @@ import morgan from "morgan";
 
 const app = express();
 const metricsApp = express();
-app.use(
-  prom({
-    metricsPath: "/metrics",
-    collectDefaultMetrics: true,
-    metricsApp,
-  })
-);
 
 app.use((req, res, next) => {
   // helpful headers:
