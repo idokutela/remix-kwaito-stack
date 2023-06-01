@@ -8,16 +8,6 @@ const PackageJson = require("@npmcli/package-json");
 const semver = require("semver");
 const YAML = require("yaml");
 
-const cleanupCypressFiles = ({ fileEntries, isTypeScript, packageManager }) =>
-  fileEntries.flatMap(([filePath, content]) => {
-    let newContent = content.replace(
-      new RegExp("npx ts-node", "g"),
-      isTypeScript ? `${packageManager.exec} ts-node` : "node"
-    );
-
-    return [fs.writeFile(filePath, newContent)];
-  });
-
 const cleanupDeployWorkflow = (deployWorkflow, deployWorkflowPath) => {
   delete deployWorkflow.jobs.typecheck;
   deployWorkflow.jobs.deploy.needs = deployWorkflow.jobs.deploy.needs.filter(
@@ -25,15 +15,6 @@ const cleanupDeployWorkflow = (deployWorkflow, deployWorkflowPath) => {
   );
 
   return [fs.writeFile(deployWorkflowPath, YAML.stringify(deployWorkflow))];
-};
-
-const cleanupVitestConfig = (vitestConfig, vitestConfigPath) => {
-  const newVitestConfig = vitestConfig.replace(
-    "setup-test-env.ts",
-    "setup-test-env.js"
-  );
-
-  return [fs.writeFile(vitestConfigPath, newVitestConfig)];
 };
 
 const escapeRegExp = (string) =>
@@ -133,16 +114,7 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     "deploy.yml"
   );
   const DOCKERFILE_PATH = path.join(rootDirectory, "Dockerfile");
-  const CYPRESS_SUPPORT_PATH = path.join(rootDirectory, "cypress", "support");
-  const CYPRESS_COMMANDS_PATH = path.join(
-    CYPRESS_SUPPORT_PATH,
-    `commands.${FILE_EXTENSION}`
-  );
-  const VITEST_CONFIG_PATH = path.join(
-    rootDirectory,
-    `vitest.config.${FILE_EXTENSION}`
-  );
-
+  
   const REPLACER = "kwaito-stack-template";
 
   const DIR_NAME = path.basename(rootDirectory);
@@ -157,20 +129,16 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     readme,
     env,
     dockerfile,
-    cypressCommands,
     deployWorkflow,
-    vitestConfig,
     packageJson,
   ] = await Promise.all([
     fs.readFile(FLY_TOML_PATH, "utf-8"),
     fs.readFile(README_PATH, "utf-8"),
     fs.readFile(EXAMPLE_ENV_PATH, "utf-8"),
     fs.readFile(DOCKERFILE_PATH, "utf-8"),
-    fs.readFile(CYPRESS_COMMANDS_PATH, "utf-8"),
     readFileIfNotTypeScript(isTypeScript, DEPLOY_WORKFLOW_PATH, (s) =>
       YAML.parse(s)
     ),
-    readFileIfNotTypeScript(isTypeScript, VITEST_CONFIG_PATH),
     PackageJson.load(rootDirectory),
   ]);
 
@@ -211,13 +179,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     fs.writeFile(README_PATH, newReadme),
     fs.writeFile(ENV_PATH, newEnv),
     fs.writeFile(DOCKERFILE_PATH, newDockerfile),
-    ...cleanupCypressFiles({
-      fileEntries: [
-        [CYPRESS_COMMANDS_PATH, cypressCommands],
-      ],
-      isTypeScript,
-      packageManager: pm,
-    }),
     packageJson.save(),
     fs.copyFile(
       path.join(rootDirectory, "remix.init", "gitignore"),
@@ -230,10 +191,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
   if (!isTypeScript) {
     fileOperationPromises.push(
       ...cleanupDeployWorkflow(deployWorkflow, DEPLOY_WORKFLOW_PATH)
-    );
-
-    fileOperationPromises.push(
-      ...cleanupVitestConfig(vitestConfig, VITEST_CONFIG_PATH)
     );
   }
 

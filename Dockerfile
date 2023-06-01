@@ -32,10 +32,6 @@ WORKDIR /myapp
 
 COPY --from=deps /myapp/node_modules /myapp/node_modules
 
-# Remove in favour of bare postgresql
-# ADD prisma .
-# RUN npx prisma generate
-
 ADD . .
 RUN npm run build
 
@@ -45,8 +41,6 @@ FROM base
 WORKDIR /myapp
 
 COPY --from=production-deps /myapp/node_modules /myapp/node_modules
-# Removed in favour of bare PostgreSQL
-# COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/build /myapp/build
 COPY --from=build /myapp/public /myapp/public
