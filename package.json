@@ -17,7 +17,7 @@
     "lint:repo": "npm run lint -- --config ./.eslintrc.repo.js",
     "setup:db": "ts-node --require tsconfig-paths/register --require ./node_modules/dotenv/config scripts/migrate.ts",
     "setup:seed": "ts-node --require tsconfig-paths/register --require ./node_modules/dotenv/config scripts/seed.ts",
-    "setup": "run-s setup:",
+    "setup": "run-s setup:*",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
     "typecheck": "tsc"
   },
