@@ -1,5 +1,6 @@
 # Remix Kwaito Stack
-A simple [Remix stack](https://remix.run/docs/en/main/pages/stacks) for apps on [fly.io]. The stack has no opinions on how you test or monitor.
+A bare bones [Remix stack](https://remix.run/docs/en/main/pages/stacks) for apps on [fly.io] running PostgreSQL.
+The goal of Kwaito is to get you set up quickly with a solid fly app, and make it easy to understand and extend.
 
 To create a new app, just run
 ```
@@ -8,22 +9,58 @@ npx create-remix@latest --template idokutela/remix-kwaito-stack
 
 ## What's in the stack
 
-- [Multi-region Fly app deployment](https://fly.io/docs/reference/scaling/) with [Docker](https://www.docker.com/)
-- [Multi-region Fly PostgreSQL Cluster](https://fly.io/docs/getting-started/multi-region-databases/)
+- [Fly app deployment](https://fly.io/docs/reference/scaling/) with [Docker](https://www.docker.com/)
+- [Fly PostgreSQL Cluster](https://fly.io/docs/getting-started/multi-region-databases/)
 - Healthcheck endpoint for [Fly backups region fallbacks](https://fly.io/docs/reference/configuration/#services-http_checks)
-- [GitHub Actions](https://github.com/features/actions) for deploy on merge to production and staging environments
 - basic PostgreSQL with [pg](https://node-postgres.com/) and a simple migration script.
-- Styling with [Tailwind](https://tailwindcss.com/)
-- Code formatting with [Prettier](https://prettier.io)
-- Linting with [ESLint](https://eslint.org)
 - Static Types with [TypeScript](https://typescriptlang.org)
 
-The following is *not* in the stack:
+The following is *not* in the stack (but don't worry, if you keep reading, I'll explain how you set up those bits that you need):
+- Styling
+- Code formatting
+- Linting
 - End-to-end testing
 - Local third party request mocking
 - Unit testing
+- Monitoring
+- CI/CD: you have to do things manually. Look below to see how to set up Github Actions or Bitbucket Pipelines to do the work for you.
 
-Setting that up is pretty specific to your own style: set up the stack, and then set up your testing environment.
+## Understanding the stack
+The stack is based on Remix's node endpoint. It lets you develop locally against a Docker container running PostgreSQL. When you're ready for your deploy, follow the guide below and you'll have a fly staging and prod instance running your app, with a Fly PostgreSQL cluster for each. I'll also explain how you can scale this to multiple regions as/when the need applies.
+
+When the stack initialises, it sets up the following basic directory structure:
+
+ - /app - your remix app goes here. You'll find the usual Remix file structure here, along with `db.server.ts`, which sets up a connection pool to the appropriate database. It also comes with a helpful utility to let you run SQL queries using tagged template literals. If you already have a running app, you can probably copy it in unchanged. Just make sure you update your database logic based on `db.server.ts`.
+ - /db - you define your database schema here. See the [Setting up your databse](#setting-up-your-database) section for details.
+ - /public - the standard Remix public folder
+ - /scripts - utility scripts go here. The `migrate.ts` script does the job of setting up and migrating your database. The `seed.ts` stub gets run when you call setup and seeds your local dev DB.
+
+ In the root folder you will find
+ - server.ts : this runs the server. It's a pretty simple node/express server: [read how it works](#understanding-the-server).
+ - README.md - this file
+ 
+ and various config files. Important ones are:
+ - docker-compose.yml : sets up the dev postgres container
+ - Dockerfile, .dockerignore, fly.toml: these are relevant to setting up your fly account.
+ - .env (.env.example): you set up your local environment variables here. This is prepopulated with those variables necessary for DB access and session management.
+ - remix.config.js/remix.env.d.ts : remix config
+ - package.json - along with the dependencies, this defines various useful scripts.
+
+### Understanding the server
+The server is a simple node/express server. I highly recommend you just read the source. It can handle multi-region deploys out of the box: the code to do so is the only mildly tricky code in the server.
+
+**NB**: out of the box, there is no request logging/monitoring set up. You are free to add your own. Read about [adding request logging with Morgan](#setting-up-morgan) and [monitoring with Prometheus](#monitoring-with-prometheus) to get an idea how to do so.
+
+## Setting up your database
+Kwaito aims to be as low on magic as possible. It uses PostgreSQL for state persistence. To set up your schema, you put <version>.up/down.sql files in ./db.
+
+The migrate script creates a table __schema_version which keeps track of the version. When it is run, it checks the current version looks at the schema definition files in ./db. If it finds files with higher numbers, it runs these in order in a giant transaction until it reaches the final version. You can also run the migrate script by hand to migrate the schema to a specific version: run `npm run setup:db -- <version>`. This then either applied the requisite "up" or "down" scripts to migrate to that version.
+
+The migrate script is very simple: I encourage you to read it!
+
+For developing, it is often useful to seed your database with data. The standard setup achieves this by running "seed.ts". You can put whatever you want in it: the "client" variable is a `node-postgres` Client.
+
+## Developing against the Kwaito stack
 
 ## WARNING
 

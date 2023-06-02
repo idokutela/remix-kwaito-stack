@@ -1,12 +1,10 @@
 import path from "path";
 
 import { createRequestHandler } from "@remix-run/express";
-import compression from "compression";
+import compression from "compression"; 
 import express from "express";
-import morgan from "morgan";
 
 const app = express();
-const metricsApp = express();
 
 app.use((req, res, next) => {
   // helpful headers:
@@ -65,8 +63,6 @@ app.use(
 // more aggressive with this caching.
 app.use(express.static("public", { maxAge: "1h" }));
 
-app.use(morgan("tiny"));
-
 const MODE = process.env.NODE_ENV;
 const BUILD_DIR = path.join(process.cwd(), "build");
 
@@ -92,11 +88,6 @@ app.listen(port, () => {
   console.log(`✅ app ready: http://localhost:${port}`);
 });
 
-const metricsPort = process.env.METRICS_PORT || 3001;
-
-metricsApp.listen(metricsPort, () => {
-  console.log(`✅ metrics ready: http://localhost:${metricsPort}/metrics`);
-});
 
 function purgeRequireCache() {
   // purge require cache on requests for "server side HMR" this won't let

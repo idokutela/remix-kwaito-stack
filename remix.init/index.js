@@ -6,16 +6,6 @@ const path = require("path");
 const toml = require("@iarna/toml");
 const PackageJson = require("@npmcli/package-json");
 const semver = require("semver");
-const YAML = require("yaml");
-
-const cleanupDeployWorkflow = (deployWorkflow, deployWorkflowPath) => {
-  delete deployWorkflow.jobs.typecheck;
-  deployWorkflow.jobs.deploy.needs = deployWorkflow.jobs.deploy.needs.filter(
-    (need) => need !== "typecheck"
-  );
-
-  return [fs.writeFile(deployWorkflowPath, YAML.stringify(deployWorkflow))];
-};
 
 const escapeRegExp = (string) =>
   // $& means the whole matched string
@@ -56,15 +46,6 @@ const getPackageManagerVersion = (packageManager) =>
 
 const getRandomString = (length) => crypto.randomBytes(length).toString("hex");
 
-const readFileIfNotTypeScript = (
-  isTypeScript,
-  filePath,
-  parseFunction = (result) => result
-) =>
-  isTypeScript
-    ? Promise.resolve()
-    : fs.readFile(filePath, "utf-8").then(parseFunction);
-
 const removeUnusedDependencies = (dependencies, unusedDependencies) =>
   Object.fromEntries(
     Object.entries(dependencies).filter(
@@ -101,18 +82,11 @@ const updatePackageJson = ({ APP_NAME, isTypeScript, packageJson }) => {
 
 const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
   const pm = getPackageManagerCommand(packageManager);
-  const FILE_EXTENSION = isTypeScript ? "ts" : "js";
 
   const README_PATH = path.join(rootDirectory, "README.md");
   const FLY_TOML_PATH = path.join(rootDirectory, "fly.toml");
   const EXAMPLE_ENV_PATH = path.join(rootDirectory, ".env.example");
   const ENV_PATH = path.join(rootDirectory, ".env");
-  const DEPLOY_WORKFLOW_PATH = path.join(
-    rootDirectory,
-    ".github",
-    "workflows",
-    "deploy.yml"
-  );
   const DOCKERFILE_PATH = path.join(rootDirectory, "Dockerfile");
   
   const REPLACER = "kwaito-stack-template";
@@ -129,16 +103,12 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     readme,
     env,
     dockerfile,
-    deployWorkflow,
     packageJson,
   ] = await Promise.all([
     fs.readFile(FLY_TOML_PATH, "utf-8"),
     fs.readFile(README_PATH, "utf-8"),
     fs.readFile(EXAMPLE_ENV_PATH, "utf-8"),
     fs.readFile(DOCKERFILE_PATH, "utf-8"),
-    readFileIfNotTypeScript(isTypeScript, DEPLOY_WORKFLOW_PATH, (s) =>
-      YAML.parse(s)
-    ),
     PackageJson.load(rootDirectory),
   ]);
 
@@ -187,12 +157,6 @@ const main = async ({ isTypeScript, packageManager, rootDirectory }) => {
     fs.rm(path.join(rootDirectory, ".eslintrc.repo.js")),
     fs.rm(path.join(rootDirectory, "LICENSE.md")),
   ];
-
-  if (!isTypeScript) {
-    fileOperationPromises.push(
-      ...cleanupDeployWorkflow(deployWorkflow, DEPLOY_WORKFLOW_PATH)
-    );
-  }
 
   await Promise.all(fileOperationPromises);
 

@@ -1,10 +1,10 @@
-import { Client } from "pg";
+import { Pool, PoolClient } from "pg";
 import invariant from "tiny-invariant";
 
-let client: Client;
+let pool: Pool;
 
 declare global {
-  var __db__: Client;
+  var __db__: Pool;
 }
 
 // this is needed because in development we don't want to restart
@@ -12,15 +12,15 @@ declare global {
 // create a new connection to the DB with every change either.
 // in production we'll have a single connection to the DB.
 if (process.env.NODE_ENV === "production") {
-  client = getClient();
+  pool = getPool();
 } else {
   if (!global.__db__) {
-    global.__db__ = getClient();
+    global.__db__ = getPool();
   }
-  client = global.__db__;
+  pool = global.__db__;
 }
 
-function getClient() {
+function getPool() {
   const { DATABASE_URL } = process.env;
   invariant(typeof DATABASE_URL === "string", "DATABASE_URL env var not set");
 
@@ -49,8 +49,8 @@ function getClient() {
   // that this only runs once per server restart and won't automatically be
   // re-run per request like everything else is. So if you need to change
   // something in this file, you'll need to manually restart the server.
-  const client = new Client({
-    connectionString: databaseUrl.toString()
+  const client = new Pool({
+    connectionString: databaseUrl.toString(),
   });
   // connect eagerly
   client.connect();
@@ -58,4 +58,53 @@ function getClient() {
   return client;
 }
 
-export { client };
+export { pool };
+
+function sqlOfQuery(
+  q: (
+    s: string,
+    params?: ReadonlyArray<unknown>
+  ) => Promise<{ rows: unknown[] }>
+) {
+  return async function sql(
+    strings: readonly [string, ...ReadonlyArray<string>],
+    ...params: ReadonlyArray<unknown>
+  ): Promise<ReadonlyArray<unknown>> {
+    let queryString = strings[0];
+    for (let i = 1; i < strings.length; i++) {
+      const part = strings[i];
+      const param = `${i}`;
+      queryString = `${queryString}${param}${part}`;
+    }
+    const { rows } = await q(queryString, params);
+    return rows;
+  };
+}
+
+/**
+ * Executes a one-shot query with a template literal.
+ * Example:
+ *     sql`SELECT * FROM foo WHERE id=${"Hello"}`
+ */
+export const sql = sqlOfQuery(pool.query);
+
+/**
+ * Fetches a client from the pool and runs `f` on it.
+ */
+export async function withClient<T extends unknown>(
+  f: (_: {
+    client: PoolClient;
+    sql: (
+      strings: readonly [string, ...ReadonlyArray<string>],
+      ...params: ReadonlyArray<unknown>
+    ) => Promise<ReadonlyArray<unknown>>;
+  }) => Promise<T>
+): Promise<T> {
+  const client = await pool.connect();
+  const sql = sqlOfQuery(client.query);
+  try {
+    return f({ client, sql });
+  } finally {
+    client.release();
+  }
+}

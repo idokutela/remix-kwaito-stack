@@ -4,10 +4,6 @@ FROM node:16-bullseye-slim as base
 # set for base and all layer that inherit from it
 ENV NODE_ENV production
 
-# Removed: not using prisma
-# Install openssl for Prisma
-# RUN apt-get update && apt-get install -y openssl
-
 # Install all node_modules, including dev dependencies
 FROM base as deps
 
