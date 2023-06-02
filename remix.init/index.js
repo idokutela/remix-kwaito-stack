@@ -64,10 +64,6 @@ const updatePackageJson = ({ APP_NAME, isTypeScript, packageJson }) => {
       ...scripts
     },
   } = packageJson.content;
-  const newScripts = isTypeScript
-  ? { ...scripts, typecheck, validate }
-  : { ...scripts, validate: validate.replace(" typecheck", "") };
-  console.log(newScripts);
 
   packageJson.update({
     name: APP_NAME,

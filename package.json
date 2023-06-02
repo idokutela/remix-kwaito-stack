@@ -19,7 +19,8 @@
     "setup:seed": "ts-node --require tsconfig-paths/register --require ./node_modules/dotenv/config scripts/seed.ts",
     "setup": "run-s setup:*",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "validate": "run-p \"test -- --run\" lint typecheck"
   },
   "prettier": {},
   "eslintIgnore": [
