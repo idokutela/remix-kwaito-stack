@@ -70,6 +70,63 @@ This starts your app in development mode, rebuilding assets on file changes.
 
 Your database is empty to start off. Create a schema as described in [setting up the database](#setting-up-your-database).
 
+## Deployment
+
+Prior to your first deployment, you'll need to do a few things:
+
+- [Install Fly](https://fly.io/docs/getting-started/installing-flyctl/)
+
+- Sign up and log in to Fly
+
+  ```sh
+  fly auth signup
+  ```
+
+  > **Note:** If you have more than one Fly account, ensure that you are signed into the same account in the Fly CLI as you are in the browser. In your terminal, run `fly auth whoami` and ensure the email matches the Fly account signed into the browser.
+
+- Create your fly app:
+
+  ```sh
+  fly apps create kwaito-stack-template
+  ```
+
+  > **Note:** Once you've successfully created an app, double-check the `fly.toml` file to ensure that the `app` key is the name of the production app you created. This Stack automatically appends a unique suffix at init. You will likely see [404 errors in your Github Actions CI logs](https://community.fly.io/t/404-failure-with-deployment-with-remix-blues-stack/4526/3) if you have this mismatch.
+
+- Add a `SESSION_SECRET` to your fly app secrets, to do this you can run the following commands:
+
+  ```sh
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app kwaito-stack-template
+  ```
+
+  > **Note:** When creating the staging secret, you may get a warning from the Fly CLI that looks like this:
+  >
+  > ```
+  > WARN app flag 'kwaito-stack-template-staging' does not match app name in config file 'kwaito-stack-template'
+  > ```
+  >
+  > This simply means that the current directory contains a config that references the production app we created in the first step. Ignore this warning and proceed to create the secret.
+
+  If you don't have openssl installed, you can also use [1password](https://1password.com/password-generator/) to generate a random secret, just replace `$(openssl rand -hex 32)` with the generated secret.
+
+- Create a database for your app:
+
+  ```sh
+  fly postgres create --name kwaito-stack-template-db
+  fly postgres attach --app kwaito-stack-template kwaito-stack-template-db
+  ```
+
+  > **Note:** You'll get the same warning for the same reason when attaching the staging database that you did in the `fly set secret` step above. No worries. Proceed!
+
+Fly will take care of setting the `DATABASE_URL` secret for you.
+
+Now that everything is set up you can deploy:
+
+```sh
+fly deploy
+```
+
+When you make changes, just run this to deploy the new version.
+
 ## Understanding the stack
 The stack is based on Remix's node endpoint. It lets you develop locally against a Docker container running PostgreSQL. When you're ready for your deploy, follow the guide below and you'll have a fly staging and prod instance running your app, with a Fly PostgreSQL cluster for each. I'll also explain how you can scale this to multiple regions as/when the need applies.
 

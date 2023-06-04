@@ -14,4 +14,4 @@
 # npx prisma migrate deploy
 
 # ... in favour of the migrate script
-ts-node -require tsconfig-paths/register scripts/migrate.ts
+node scripts/migrate.js
