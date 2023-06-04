@@ -25,6 +25,51 @@ The following is *not* in the stack (but don't worry, if you keep reading, I'll 
 - Monitoring
 - CI/CD: you have to do things manually. Look below to see how to set up Github Actions or Bitbucket Pipelines to do the work for you.
 
+## Developing against the Kwaito stack
+
+- If you did not ask to run npm install, you need to explicitly init the stack. Do so by running 
+
+  ```sh
+  npx remix init
+  ```
+- You probably also want to init your vcs here. For git, do this:
+
+  ```sh
+  git init # if you haven't already
+  git add .
+  git commit -m "Initialize project"
+  ```
+
+- Start the Postgres Database in [Docker](https://www.docker.com/get-started):
+
+  ```sh
+  npm run docker
+  ```
+
+  > **Note:** The npm script will complete while Docker sets up the container in the background. Ensure that Docker has finished and your container is running before proceeding.
+
+- Initial setup:
+
+  ```sh
+  npm run setup
+  ```
+
+- Run the first build:
+
+  ```sh
+  npm run build
+  ```
+
+- Start dev server:
+
+  ```sh
+  npm run dev
+  ```
+
+This starts your app in development mode, rebuilding assets on file changes.
+
+Your database is empty to start off. Create a schema as described in [setting up the database](#setting-up-your-database).
+
 ## Understanding the stack
 The stack is based on Remix's node endpoint. It lets you develop locally against a Docker container running PostgreSQL. When you're ready for your deploy, follow the guide below and you'll have a fly staging and prod instance running your app, with a Fly PostgreSQL cluster for each. I'll also explain how you can scale this to multiple regions as/when the need applies.
 
@@ -86,56 +131,6 @@ If you just want to run the seed script, call
 ```sh
 npm run setup:seed
 ```
-
-## Developing against the Kwaito stack
-
-- If you did not ask to run npm install, you need to explicitly init the stack. Do so by running 
-
-  ```sh
-  npx remix init
-  ```
-- You probably also want to init your vcs here. For git, do this:
-
-  ```sh
-  git init # if you haven't already
-  git add .
-  git commit -m "Initialize project"
-  ```
-
-- Start the Postgres Database in [Docker](https://www.docker.com/get-started):
-
-  ```sh
-  npm run docker
-  ```
-
-  > **Note:** The npm script will complete while Docker sets up the container in the background. Ensure that Docker has finished and your container is running before proceeding.
-
-- Initial setup:
-
-  ```sh
-  npm run setup
-  ```
-
-- Run the first build:
-
-  ```sh
-  npm run build
-  ```
-
-- Start dev server:
-
-  ```sh
-  npm run dev
-  ```
-
-This starts your app in development mode, rebuilding assets on file changes.
-
-Your database is empty to start off. Create a schema as described in [setting up the database](#setting-up-your-database).
-
-- Email: `rachel@remix.run`
-- Password: `racheliscool`
-
-If you'd prefer not to use Docker, you can also use Fly's Wireguard VPN to connect to a development database (or even your production database). You can find the instructions to set up Wireguard [here](https://fly.io/docs/reference/private-networking/#install-your-wireguard-app), and the instructions for creating a development database [here](https://fly.io/docs/reference/postgres/).
 
 
 ## WARNING
