@@ -58,26 +58,45 @@ The migrate script creates a table __schema_version which keeps track of the ver
 
 The migrate script is very simple: I encourage you to read it!
 
+### Your database when developing
 For developing, it is often useful to seed your database with data. The standard setup achieves this by running "seed.ts". You can put whatever you want in it: the "client" variable is a `node-postgres` Client.
 
+To reinitialise your database in dev, run
+
+```sh
+npm run reset-db
+```
+
+This migrates back to the empty database, then up to your latest schema, and runs `seed` afterwards.
+
+If you add a version, and just want to migrate up, you can run
+
+```sh
+npm run setup:db
+```
+
+Similarly, to migrate to a specific version, run
+
+```sh
+npm run setup:db -- <version>
+```
+
+If you just want to run the seed script, call
+
+```sh
+npm run setup:seed
+```
+
 ## Developing against the Kwaito stack
-
-## WARNING
-
-Much of what is below does not reflect the current state. I'll update this when I have got things to an acceptable point.
-
-## Quickstart
-
-Click this button to create a [Gitpod](https://gitpod.io) workspace with the project set up, Postgres started, and Fly pre-installed (er, not sure this will work :D)
-
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/idokutela/remix-kwaito-stack/tree/main)
-
-## Development
 
 - If you did not ask to run npm install, you need to explicitly init the stack. Do so by running 
 
   ```sh
   npx remix init
+  ```
+- You probably also want to init your vcs here. For git, do this:
+
+  ```sh
   git init # if you haven't already
   git add .
   git commit -m "Initialize project"
@@ -111,12 +130,25 @@ Click this button to create a [Gitpod](https://gitpod.io) workspace with the pro
 
 This starts your app in development mode, rebuilding assets on file changes.
 
-The database seed script creates a new user with some data you can use to get started:
+Your database is empty to start off. Create a schema as described in [setting up the database](#setting-up-your-database).
 
 - Email: `rachel@remix.run`
 - Password: `racheliscool`
 
 If you'd prefer not to use Docker, you can also use Fly's Wireguard VPN to connect to a development database (or even your production database). You can find the instructions to set up Wireguard [here](https://fly.io/docs/reference/private-networking/#install-your-wireguard-app), and the instructions for creating a development database [here](https://fly.io/docs/reference/postgres/).
+
+
+## WARNING
+
+Much of what is below does not reflect the current state. I'll update this when I have got things to an acceptable point.
+
+## Quickstart
+
+Click this button to create a [Gitpod](https://gitpod.io) workspace with the project set up, Postgres started, and Fly pre-installed (er, not sure this will work :D)
+
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/idokutela/remix-kwaito-stack/tree/main)
+
+## Development
 
 ### Relevant code:
 
