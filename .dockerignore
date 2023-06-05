@@ -1,8 +1,8 @@
-node_modules
+/node_modules
 *.log
 .DS_Store
 .env
 .cache
-public/build
-build
-postgres-data
+/public/build
+/build
+/postgres-data
