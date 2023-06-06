@@ -1,15 +1,11 @@
 import { Pool, type PoolClient } from "pg";
 
-let pool: Pool;
+let pool: Promise<Pool>;
 
 declare global {
-  var __db__: Pool;
+  var __db__: Promise<Pool>;
 }
 
-// this is needed because in development we don't want to restart
-// the server with every change, but we want to make sure we don't
-// create a new connection to the DB with every change either.
-// in production we'll have a single connection to the DB.
 if (process.env.NODE_ENV === "production") {
   pool = getPool();
 } else {
@@ -19,7 +15,12 @@ if (process.env.NODE_ENV === "production") {
   pool = global.__db__;
 }
 
-function getPool() {
+// this is needed because in development we don't want to restart
+// the server with every change, but we want to make sure we don't
+// create a new connection to the DB with every change either.
+// in production we'll have a single connection to the DB.
+
+async function getPool() {
   const { DATABASE_URL } = process.env;
   if (typeof DATABASE_URL !== "string") {
     throw new Error("DATABASE_URL env var not set");
@@ -54,7 +55,7 @@ function getPool() {
     connectionString: databaseUrl.toString(),
   });
   // connect eagerly
-  client.connect();
+  await client.connect();
 
   return client;
 }
@@ -62,21 +63,19 @@ function getPool() {
 export { pool };
 
 function sqlOfQuery(
-  q: (
-    s: string,
-    params?: ReadonlyArray<unknown>
-  ) => Promise<{ rows: unknown[] }>
+  q: (s: string, params?: any[]) => Promise<{ rows: unknown[] }>
 ) {
   return async function sql(
-    strings: readonly [string, ...ReadonlyArray<string>],
-    ...params: ReadonlyArray<unknown>
+    strings: TemplateStringsArray,
+    ...params: any[]
   ): Promise<ReadonlyArray<unknown>> {
     let queryString = strings[0];
     for (let i = 1; i < strings.length; i++) {
       const part = strings[i];
-      const param = `${i}`;
+      const param = `$${i}`;
       queryString = `${queryString}${param}${part}`;
     }
+
     const { rows } = await q(queryString, params);
     return rows;
   };
@@ -87,7 +86,7 @@ function sqlOfQuery(
  * Example:
  *     sql`SELECT * FROM foo WHERE id=${"Hello"}`
  */
-export const sql = sqlOfQuery(pool.query);
+export const sql = sqlOfQuery(async (p, str) => (await pool).query(p, str));
 
 /**
  * Fetches a client from the pool and runs `f` on it.
@@ -96,16 +95,19 @@ export async function withClient<T extends unknown>(
   f: (_: {
     client: PoolClient;
     sql: (
-      strings: readonly [string, ...ReadonlyArray<string>],
+      strings: TemplateStringsArray,
       ...params: ReadonlyArray<unknown>
     ) => Promise<ReadonlyArray<unknown>>;
   }) => Promise<T>
 ): Promise<T> {
-  const client = await pool.connect();
-  const sql = sqlOfQuery(client.query);
+  const client = await (await pool).connect();
+  const sql = sqlOfQuery((p, str) => client.query(p, str));
   try {
-    return f({ client, sql });
+    const res = await f({ client, sql });
+    console.log("Done with query");
+    return res;
   } finally {
+    console.log("Releasing");
     client.release();
   }
 }
