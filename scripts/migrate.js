@@ -17,19 +17,47 @@ const { Client } = require("pg");
 run();
 
 async function run() {
-  const target = getTarget();
   const client = getClient();
-  await client.connect();
   const migrations = await readMigrationFiles("./db");
-  console.log(`Migration files read. ${migrations.length} versions available.`);
-  await applyMigrations(client, migrations, target);
-  client.end();
-  console.log("Success.");
+  const target = getTarget() ?? migrations.length - 1;
+  if (migrations.length === 0) {
+    if (target !== undefined && target !== -1) {
+      throw new Error("No migrations defined. Unable to migrate!");
+    }
+    console.log(
+      "You don't have any migrations defined. To create a database schema, add appropriate files to ./db."
+    );
+    return;
+  }
+  console.log(
+    `Migration files read. Migrations defined up to version ${
+      migrations.length - 1
+    }. You are migrating from ${client} to ${target}.`
+  );
+
+  await client.connect();
+  try {
+    await ensureVersionsTable(client);
+    const currentVersion = await getCurrentVersion(client);
+    if (target === currentVersion) {
+      console.log(`Db already at version ${target}. Nothing to do.`);
+      return;
+    }
+
+    await applyMigrations(client, migrations, currentVersion, target);
+    await client.end();
+    console.log("Success.");
+  } catch (e) {
+    console.error(e.message);
+    throw e;
+  } finally {
+    await client.end();
+  }
 }
 
 function getTarget() {
   const numTargets = process.argv
-    .filter((f) => /^\d+$/.test(f))
+    .filter((f) => /^[+-]?\d+$/.test(f))
     .map((f) => Number.parseInt(f));
   return numTargets[numTargets.length - 1];
 }
@@ -63,24 +91,27 @@ function readSingleMigration(directory) {
   };
 }
 
-async function applyMigrations(c, m, target = m.length - 1) {
-  if (target !== -1 && !m[target]) {
-    throw new Error(`Cannot migrate to ${target}. Missing steps.`);
+async function applyMigrations(c, m, source, target = m.length - 1) {
+  if (
+    target !== -1 &&
+    m.slice(source + 1, target + 1).some((t) => t === undefined)
+  ) {
+    const missingIndex = m
+      .slice(source + 1, target + 1)
+      .findIndex((t) => t === -1);
+    throw new Error(
+      `Cannot migrate to ${target}. Missing step ${missingIndex}.`
+    );
   }
-  await ensureVersionsTable(c);
-  const currentVersion = await getCurrentVersion(c);
-  if (currentVersion !== -1 && !m[currentVersion]) {
-    throw new Error(`Cannot migrate from ${currentVersion}. Missing steps.`);
-  }
-  console.log(`Migrating from ${currentVersion} to ${target}`);
-  if (currentVersion <= target) {
-    for (let step = currentVersion + 1; step < target; step++) {
-      execStep(c, { step: m[step].up });
+  console.log(`Migrating from ${source} to ${target}`);
+  if (source <= target) {
+    for (let step = source + 1; step <= target; step++) {
+      await execStep(c, { step: m[step].up });
     }
     return;
   }
-  for (let step = currentVersion; target < step; step--) {
-    execStep(c, { step: m[step].down, down: true });
+  for (let step = source; target < step; step--) {
+    await execStep(c, { step: m[step].down, down: true });
   }
 }
 
@@ -130,6 +161,8 @@ async function getCurrentVersion(c) {
   } = await c.query(`
     SELECT version FROM __schema_version WHERE id = 0;
     `);
+
+  console.log(result);
   if (!result) {
     return -1;
   }
@@ -139,14 +172,14 @@ async function getCurrentVersion(c) {
 async function up(c) {
   await c.query(
     `
-        INSERT INTO __schema_version SET version = version + 1 WHERE id = 0;`
+        UPDATE __schema_version SET version = version + 1 WHERE id = 0;`
   );
 }
 
 async function down(c) {
   await c.query(
     `
-        INSERT INTO __schema_version SET version = version - 1 WHERE id = 0;`
+        UPDATE __schema_version SET version = version - 1 WHERE id = 0;`
   );
 }
 
@@ -154,8 +187,10 @@ async function execStep(c, { step, down: goDown = false }) {
   await c.query("BEGIN");
   await c.query(step);
   if (goDown) {
-    down(c);
+    console.log("Down");
+    await down(c);
   } else {
+    console.log("Up");
     await up(c);
   }
   await c.query("END");

@@ -1,5 +1,4 @@
-import { Pool, PoolClient } from "pg";
-import invariant from "tiny-invariant";
+import { Pool, type PoolClient } from "pg";
 
 let pool: Pool;
 
@@ -22,7 +21,9 @@ if (process.env.NODE_ENV === "production") {
 
 function getPool() {
   const { DATABASE_URL } = process.env;
-  invariant(typeof DATABASE_URL === "string", "DATABASE_URL env var not set");
+  if (typeof DATABASE_URL !== "string") {
+    throw new Error("DATABASE_URL env var not set");
+  }
 
   const databaseUrl = new URL(DATABASE_URL);
 
