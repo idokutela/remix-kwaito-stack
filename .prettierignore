@@ -5,5 +5,3 @@ node_modules
 .env
 
 /postgres-data
-
-/app/styles/tailwind.css
