@@ -54,8 +54,6 @@ async function getPool() {
   const client = new Pool({
     connectionString: databaseUrl.toString(),
   });
-  // connect eagerly
-  await client.connect();
 
   return client;
 }
